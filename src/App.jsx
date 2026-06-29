@@ -1,14 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
+﻿import { useState, useMemo, useEffect } from "react";
 import {
   LineChart, Line, BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer, ReferenceArea
 } from "recharts";
-import {
-  BDA_REPS, SBC_REPS,
-  BDA_ACTIVE, SBC_ACTIVE,
-  BDA_DATE_PC, BDA_DATE_RPR, BDA_DATE_CCOST,
-  SBC_DATE_PC, SBC_DATE_RPR, SBC_DATE_CCOST,
-} from "./data.js";
+import { DATA_URL } from "./data.js";
 
 const PASSWORD = "john2026";
 
@@ -44,8 +39,8 @@ const BDA_COMM_RATE = {
 };
 
 const lastName = name => name.split(" ").slice(-1)[0];
-const fmt$  = v => v == null ? "—" : `$${v >= 0 ? "" : "-"}${Math.abs(v).toLocaleString("en-US",{maximumFractionDigits:0})}`;
-const fmtPC = v => v == null ? "—" : v.toFixed(2) + "x";
+const fmt$  = v => v == null ? "â€”" : `$${v >= 0 ? "" : "-"}${Math.abs(v).toLocaleString("en-US",{maximumFractionDigits:0})}`;
+const fmtPC = v => v == null ? "â€”" : v.toFixed(2) + "x";
 
 // Generate future month labels e.g. "Mar-26", "Apr-26" ...
 function futureMonths(fromDateLabel, count) {
@@ -69,7 +64,7 @@ const CustomTooltip = ({ active, payload, label, rprLookup }) => {
     <div style={{ background:"#0f1f3d", border:"1px solid #1e3a6e", borderRadius:6, padding:"10px 14px", fontSize:12 }}>
       <div style={{ color:"#aaa", marginBottom:6, fontWeight:600 }}>{label}</div>
       {sorted.map(p => {
-        const isProj = p.dataKey.endsWith("★");
+        const isProj = p.dataKey.endsWith("â˜…");
         const repName = isProj ? p.dataKey.slice(0,-1) : p.dataKey;
         const rpr = rprLookup?.[label]?.[repName];
         return (
@@ -121,6 +116,45 @@ function PasswordGate({ children }) {
 }
 
 export default function App() {
+
+  // â”€â”€ Remote data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  const [remoteData, setRemoteData] = useState(null);
+  const [dataLoading, setDataLoading] = useState(true);
+  useEffect(() => {
+    fetch(DATA_URL)
+      .then(r => r.json())
+      .then(d => { setRemoteData(d); setDataLoading(false); })
+      .catch(() => setDataLoading(false));
+  }, []);
+
+  const BDA_REPS = remoteData?.BDA_REPS ?? [];
+  const SBC_REPS = remoteData?.SBC_REPS ?? [];
+  const BDA_KNOWN_REPS = remoteData?.BDA_KNOWN_REPS ?? [];
+  const SBC_KNOWN_REPS = remoteData?.SBC_KNOWN_REPS ?? [];
+  const BDA_ACTIVE = remoteData?.BDA_ACTIVE ?? [];
+  const BDA_INACTIVE = remoteData?.BDA_INACTIVE ?? [];
+  const SBC_ACTIVE = remoteData?.SBC_ACTIVE ?? [];
+  const SBC_INACTIVE = remoteData?.SBC_INACTIVE ?? [];
+  const BDA_DATE_RPR = remoteData?.BDA_DATE_RPR ?? [];
+  const SBC_DATE_RPR = remoteData?.SBC_DATE_RPR ?? [];
+  const BDA_MONTH_RPR = remoteData?.BDA_MONTH_RPR ?? [];
+  const SBC_MONTH_RPR = remoteData?.SBC_MONTH_RPR ?? [];
+  const BDA_DATE_CCOST = remoteData?.BDA_DATE_CCOST ?? [];
+  const SBC_DATE_CCOST = remoteData?.SBC_DATE_CCOST ?? [];
+  const BDA_MONTH_CCOST = remoteData?.BDA_MONTH_CCOST ?? [];
+  const SBC_MONTH_CCOST = remoteData?.SBC_MONTH_CCOST ?? [];
+  const BDA_DATE_PC = remoteData?.BDA_DATE_PC ?? [];
+  const SBC_DATE_PC = remoteData?.SBC_DATE_PC ?? [];
+  const BDA_MONTH_PC = remoteData?.BDA_MONTH_PC ?? [];
+  const SBC_MONTH_PC = remoteData?.SBC_MONTH_PC ?? [];
+
+  if (dataLoading) return (
+    <div style={{ background:"#0a0f1e", minHeight:"100vh", display:"flex",
+      alignItems:"center", justifyContent:"center", color:"#aaa", fontSize:14 }}>
+      Loading dashboard dataâ€¦
+    </div>
+  );
+
   const [universe,   setUniverse]   = useState("bda");
   const [activeReps, setActiveReps] = useState(new Set(BDA_ACTIVE));
   const [dateStart,  setDateStart]  = useState(null);
@@ -205,8 +239,8 @@ export default function App() {
     const lastDate = pcData[pcData.length - 1]?.date;
     if (!lastDate) return pcData;
     const futureDates = futureMonths(lastDate, months);
-    const projKey = rep + "★";
-    // Clone existing data — add projKey column as null
+    const projKey = rep + "â˜…";
+    // Clone existing data â€” add projKey column as null
     const base = pcData.map(row => ({ ...row, [projKey]: null }));
     // Set last actual point as start of projection
     const lastActualIdx = lastIndexMap[rep];
@@ -222,7 +256,7 @@ export default function App() {
 
   const makeEndDot = (rep, color, isProj) => (props) => {
     const { cx, cy, index } = props;
-    const key = isProj ? rep + "★" : rep;
+    const key = isProj ? rep + "â˜…" : rep;
     const lastIdx = isProj ? chartData.length - 1 : lastIndexMap[rep];
     if (index !== lastIdx) return <g key={`e-${key}-${index}`} />;
     const val = chartData[index]?.[key];
@@ -320,7 +354,7 @@ export default function App() {
     return null;
   }, [universe]);
 
-  // ── Overview computations ──────────────────────────────────────────
+  // â”€â”€ Overview computations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const overviewData = useMemo(() => {
     const list = universe === "bda" ? BDA_ACTIVE : SBC_ACTIVE;
     const pcSrc    = universe === "bda" ? BDA_DATE_PC    : SBC_DATE_PC;
@@ -354,7 +388,7 @@ export default function App() {
         <div style={{ display:"flex", alignItems:"baseline", gap:16, marginBottom:4 }}>
           <h1 style={{ margin:0, fontSize:22, fontWeight:700, letterSpacing:0.5 }}>BDA PROJECTION</h1>
           <span style={{ color:"#888", fontSize:13 }}>
-            {universe.toUpperCase()} · Active · Gross · Direct costs + commissions
+            {universe.toUpperCase()} Â· Active Â· Gross Â· Direct costs + commissions
           </span>
           {lastUpdated && (
             <span style={{ marginLeft:"auto", fontFamily:"monospace", fontSize:11,
@@ -403,14 +437,14 @@ export default function App() {
           )}
         </div>
 
-        {/* ── OVERVIEW TAB ─────────────────────────────────────────────── */}
+        {/* â”€â”€ OVERVIEW TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {activeTab === "overview" && (
           <div>
             <div style={{ background:"#0f1f3d", border:"1px solid #1e2d4a", borderRadius:6,
               padding:"8px 16px", marginBottom:14, display:"flex", alignItems:"center", gap:8 }}>
-              <span style={{ color:"#aaa", fontSize:12 }}>ℹ</span>
+              <span style={{ color:"#aaa", fontSize:12 }}>â„¹</span>
               <span style={{ color:"#aaa", fontSize:12, fontStyle:"italic" }}>
-                Actuals only — no projections included in this view
+                Actuals only â€” no projections included in this view
               </span>
             </div>
 
@@ -441,7 +475,7 @@ export default function App() {
                 <div style={{ background:"#111827", borderRadius:8, padding:"18px 24px", marginBottom:16 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:18 }}>
                     <div style={{ fontSize:11, fontWeight:700, color:"#2196F3", letterSpacing:0.5 }}>
-                      PROFIT GENERATED VS. COSTS — click to inspect
+                      PROFIT GENERATED VS. COSTS â€” click to inspect
                     </div>
                   </div>
                   {overviewData.map((d, i) => {
@@ -488,8 +522,8 @@ export default function App() {
                   })}
                   <div style={{ display:"flex", gap:20, marginTop:14 }}>
                     {[
-                      { color:"#4CAF50", label:"Above breakeven (≥100%)" },
-                      { color:"#FFC107", label:"Profitable but recovering (0–99%)" },
+                      { color:"#4CAF50", label:"Above breakeven (â‰¥100%)" },
+                      { color:"#FFC107", label:"Profitable but recovering (0â€“99%)" },
                       { color:"#E91E63", label:"Not yet profitable (<0%)" },
                     ].map(l => (
                       <div key={l.label} style={{ display:"flex", alignItems:"center", gap:6, fontSize:11, color:"#607D8B" }}>
@@ -508,12 +542,12 @@ export default function App() {
               if (!d) return null;
               const isAbove = d.pc >= 1;
               const color   = d.pc >= 1 ? "#4CAF50" : d.pc > 0 ? "#FFC107" : "#E91E63";
-              const dollarPer = d.pc != null ? d.pc.toFixed(2) : "—";
+              const dollarPer = d.pc != null ? d.pc.toFixed(2) : "â€”";
               return (
                 <div style={{ background:"#111827", borderRadius:8, padding:"18px 24px",
                   marginBottom:20, borderLeft:`3px solid ${color}` }}>
                   <div style={{ fontSize:11, fontWeight:700, color:"#2196F3", letterSpacing:0.5, marginBottom:16 }}>
-                    {inspectRep.toUpperCase()} · BREAKDOWN
+                    {inspectRep.toUpperCase()} Â· BREAKDOWN
                   </div>
                   <div style={{ display:"flex", gap:40, flexWrap:"wrap", marginBottom:18 }}>
                     {[
@@ -538,7 +572,7 @@ export default function App() {
                   </div>
                   {isAbove && (
                     <div style={{ fontSize:11, color:"#4CAF50", marginTop:8, fontWeight:700 }}>
-                      ✓ Breakeven cleared — generating net return
+                      âœ“ Breakeven cleared â€” generating net return
                     </div>
                   )}
                 </div>
@@ -547,7 +581,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ── DETAIL TAB ───────────────────────────────────────────────── */}
+        {/* â”€â”€ DETAIL TAB â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {activeTab === "detail" && (
           <div>
 
@@ -559,7 +593,7 @@ export default function App() {
           </div>
           <div style={{ display:"flex", gap:32, alignItems:"flex-start" }}>
 
-            {/* LEFT — Inputs */}
+            {/* LEFT â€” Inputs */}
             <div style={{ display:"flex", gap:16, flexWrap:"wrap", alignItems:"flex-end", flex:1 }}>
 
               {/* Rep dropdown */}
@@ -596,7 +630,7 @@ export default function App() {
                     const lastDate = pcData[pcData.length - 1]?.date;
                     if (!lastDate) return null;
                     const target = futureMonths(lastDate, parseInt(projMonths));
-                    return <span style={{ color:"#FFD700", fontSize:13, fontWeight:600 }}>→ {target[target.length-1]}</span>;
+                    return <span style={{ color:"#FFD700", fontSize:13, fontWeight:600 }}>â†’ {target[target.length-1]}</span>;
                   })()}
                 </div>
               </div>
@@ -606,7 +640,7 @@ export default function App() {
                 style={{ padding:"6px 12px", borderRadius:4, border:"1px solid #1e2d4a",
                   background:"transparent", color:"#607D8B", fontSize:11, cursor:"pointer",
                   alignSelf:"flex-end", display:"flex", alignItems:"center", gap:6 }}>
-                <span style={{ fontSize:13 }}>ℹ</span>
+                <span style={{ fontSize:13 }}>â„¹</span>
                 {showRates ? "Hide rates" : "Commission rates"}
               </button>
 
@@ -625,7 +659,7 @@ export default function App() {
               )}
             </div>
 
-            {/* Commission rates table — collapsible */}
+            {/* Commission rates table â€” collapsible */}
             {showRates && (
               <div style={{ width:"100%", marginTop:4, background:"#0a0f1e",
                 border:"1px solid #1e2d4a", borderRadius:6, padding:"12px 16px" }}>
@@ -642,7 +676,7 @@ export default function App() {
                   <tbody>
                     {activeList.map((rep, i) => {
                       const rate    = BDA_COMM_RATE[rep] ?? 0.10;
-                      const tenure  = REP_TENURE[rep] ?? "—";
+                      const tenure  = REP_TENURE[rep] ?? "â€”";
                       const isHigh  = rate >= 0.10;
                       return (
                         <tr key={rep} style={{ borderBottom:"1px solid #111827",
@@ -666,12 +700,12 @@ export default function App() {
                   </tbody>
                 </table>
                 <div style={{ marginTop:8, fontSize:11, color:"#3d4f6e" }}>
-                  Assoc. comm: 25% for all reps · Payroll tax: 12% on salary + BDA comm
+                  Assoc. comm: 25% for all reps Â· Payroll tax: 12% on salary + BDA comm
                 </div>
               </div>
             )}
 
-            {/* RIGHT — Output column */}
+            {/* RIGHT â€” Output column */}
             <div style={{ minWidth:260, borderLeft:"1px solid #1e2d4a", paddingLeft:24, display:"flex", flexDirection:"column", gap:12 }}>
               {projRep && projMonths && !isNaN(parseInt(projMonths)) && projRevenue && !isNaN(parseFloat(projRevenue)) && (
                 <div style={{ fontSize:12, color:"#607D8B" }}>
@@ -715,7 +749,7 @@ export default function App() {
                     color: projection.finalPC >= 1 ? "#4CAF50" : "#E91E63",
                     background: projection.finalPC >= 1 ? "#4CAF5022" : "#E91E6322",
                     border:`1px solid ${projection.finalPC >= 1 ? "#4CAF50" : "#E91E63"}` }}>
-                    {projection.finalPC >= 1 ? "✓ BREAKEVEN" : "✗ STILL UNDERWATER"}
+                    {projection.finalPC >= 1 ? "âœ“ BREAKEVEN" : "âœ— STILL UNDERWATER"}
                   </div>
                 </>
               ) : (
@@ -731,11 +765,11 @@ export default function App() {
         {/* Chart */}
         <div style={{ background:"#111827", borderRadius:8, padding:"16px 8px 8px", marginBottom:20 }}>
           <div style={{ color:"#aaa", fontSize:11, paddingLeft:16, marginBottom:8 }}>
-            P+/-C = RPr ÷ |Total Direct Cost|. &nbsp;
+            P+/-C = RPr Ã· |Total Direct Cost|. &nbsp;
             <span style={{ color:"#4CAF50" }}>Above 1.0x = payback zone</span>
-            &nbsp;·&nbsp;
+            &nbsp;Â·&nbsp;
             <span style={{ color:"#E91E63" }}>Below 1.0x = underwater</span>
-            {projection && <span style={{ color:"#FFD700", marginLeft:12 }}>— — Dotted = projected path for {projection.rep}</span>}
+            {projection && <span style={{ color:"#FFD700", marginLeft:12 }}>â€” â€” Dotted = projected path for {projection.rep}</span>}
           </div>
           <ResponsiveContainer width="100%" height={440}>
             <LineChart data={chartData} margin={{ top:8, right:160, left:10, bottom:4 }}>
@@ -755,7 +789,7 @@ export default function App() {
                   strokeWidth={2} dot={makeEndDot(rep, colorMap[rep], false)} connectNulls={false} />
               ))}
               {projection && (
-                <Line key={projection.rep+"★"} type="monotone" dataKey={projection.rep+"★"}
+                <Line key={projection.rep+"â˜…"} type="monotone" dataKey={projection.rep+"â˜…"}
                   stroke={colorMap[projection.rep]} strokeWidth={2} strokeDasharray="6 3"
                   dot={makeEndDot(projection.rep, colorMap[projection.rep], true)}
                   connectNulls={false} />
@@ -793,7 +827,7 @@ export default function App() {
         {selectedReps.length > 0 && (
           <div style={{ background:"#111827", borderRadius:8, overflow:"hidden", marginBottom:20 }}>
             <div style={{ padding:"10px 16px", borderBottom:"1px solid #1e2d4a", fontSize:12, color:"#aaa", fontWeight:600 }}>
-              RPr & C.Cost by Calendar Period — Selected Reps
+              RPr & C.Cost by Calendar Period â€” Selected Reps
             </div>
             <div style={{ overflowX:"auto" }}>
               <table style={{ borderCollapse:"collapse", fontSize:12, whiteSpace:"nowrap", minWidth:"100%" }}>
@@ -836,7 +870,7 @@ export default function App() {
                               <td key={row.date} style={{ padding:"7px 12px", textAlign:"right",
                                 fontWeight: val != null ? 600 : 400,
                                 color: val == null ? "#2a3a55" : isPos ? "#4CAF50" : "#E91E63" }}>
-                                {val == null ? "—" : fmt$(val)}
+                                {val == null ? "â€”" : fmt$(val)}
                               </td>
                             );
                           })}
@@ -853,7 +887,7 @@ export default function App() {
                               <td key={row.date} style={{ padding:"7px 12px", textAlign:"right",
                                 fontWeight: val != null ? 500 : 400,
                                 color: val == null ? "#2a3a55" : "#E91E63" }}>
-                                {val == null ? "—" : fmt$(val)}
+                                {val == null ? "â€”" : fmt$(val)}
                               </td>
                             );
                           })}
